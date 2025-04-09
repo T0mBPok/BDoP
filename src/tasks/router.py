@@ -2,12 +2,11 @@ from fastapi import APIRouter
 
 from src.tasks.dao import TaskDAO
 from src.tasks.schemas import Task_add
-from src.tasks.models import Task
 
 
 router = APIRouter(prefix='/tasks', tags=['Работа с задачами'])
 
-@router.get('/', summary='Get all tasks', response_model=list(Task))
+@router.get('/', summary='Get all tasks', response_model=list[Task_add])
 async def get_all_tasks():
     return await TaskDAO.get_all()
 
