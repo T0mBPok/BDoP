@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from src.tasks.rb import RBTask
 from src.tasks.dao import TaskDAO
-from src.tasks.schemas import Task_add, Task_get
+from src.tasks.schemas import Task_add, Task_get, Task_update
 
 
 router = APIRouter(prefix='/tasks', tags=['Работа с задачами'])
@@ -18,5 +18,10 @@ async def add_task(task: Task_add):
     else:
         return {'message': 'The task was not added! ERROR!'}
     
-# @router.pos('/', summary='Update a task')
-# ...
+@router.put('/', summary='Update a task')
+async def update_task(task: Task_update) -> dict:
+    check = await TaskDAO.update(filter_by = {'id': task.id}, **task.model_dump())
+    if check:
+        return {"message": "Изменения успешно сохранены", "task": task}
+    else:
+        return {"message": "Изменения не были сохранены"}
