@@ -43,3 +43,19 @@ class BaseDAO:
                     await session.rollback()
                     raise e
                 return result.rowcount
+            
+    @classmethod
+    async def delete(cls, delete_all: bool = False, **filter_by):
+        if not delete_all and not filter_by:
+            raise ValueError("Either delete_all must be True or filter_by must be provided")
+
+        async with async_session_maker() as session:
+            async with session.begin():
+                query = sqlalchemy_delete(cls.model).filter_by(**filter_by)
+                result = await session.execute(query)
+                try:
+                    await session.commit()
+                except SQLAlchemyError as e:
+                    await session.rollback()
+                    raise e
+                return result.rowcount

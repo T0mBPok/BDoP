@@ -29,3 +29,11 @@ async def update_project(project: Project_update) -> dict:
         return {'message': "Значения успешно изменены", 'project': project}
     else:
         return {'messgae': "Ошибка при изменении значений"}
+    
+@router.delete('/', summary='Удалить проект')
+async def delete_poject(project_id: int) -> dict:
+    check = await ProjectDAO.delete(id = project_id)
+    if check:
+        return {'message': f'Проект с id{project_id} удален успешно'}
+    else:
+        return {'message': 'Проект не удалось удалить'}
