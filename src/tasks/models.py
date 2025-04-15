@@ -13,6 +13,6 @@ class Task(Base):
     description: Mapped[str_null_true]
     created_at: Mapped[datetime]
     deadline: Mapped[date]
-    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"))
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
     
     projects: Mapped["Project"] = relationship("Project", back_populates="tasks")

@@ -28,7 +28,7 @@ async def update_task(task: Task_update) -> dict:
     
 @router.delete("/", summary='Удалить задание')
 async def delete_task(task_id: int) -> dict:
-    check = await TaskDAO.delete(id = task_id)
+    check = await TaskDAO.delete(filter_by = {'id': task_id})
     if check:
         return {'message': "Задача успешно удалена", 'id': task_id}
     else:
