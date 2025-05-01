@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-
+from src.users.dependencies import get_token
 from src.projects.dao import ProjectDAO
 from src.projects.schemas import Project_add, Project_get, Project_update
 from src.projects.rb import RBProject
@@ -8,11 +8,11 @@ from src.projects.rb import RBProject
 router = APIRouter(prefix='/projects', tags=['Работа с проектами'])
 
 @router.get('/', summary='Get all projects', response_model = list[Project_get])
-async def get_all_projects(request_body: RBProject = Depends()):
+async def get_all_projects(request_body: RBProject = Depends(), token: str = Depends(get_token)):
     return await ProjectDAO.find_all(**request_body.to_dict())
 
 @router.post('/', summary='Add a project')
-async def add_projects(project: Project_add):
+async def add_projects(project: Project_add, token: str = Depends(get_token)):
     check = await ProjectDAO.add(**project.model_dump())
     if check:
         return {'message': 'project was succesfully added', 'project':project}
@@ -20,7 +20,7 @@ async def add_projects(project: Project_add):
         return {'message': 'error adding project'}
     
 @router.put('/', summary='Update a project')
-async def update_project(project: Project_update) -> dict:
+async def update_project(project: Project_update, token: str = Depends(get_token)) -> dict:
     check = await ProjectDAO.update(filter_by={'id': project.id}, 
                                     name = project.name,
                                     description = project.description,
@@ -31,7 +31,7 @@ async def update_project(project: Project_update) -> dict:
         return {'messgae': "Ошибка при изменении значений"}
     
 @router.delete('/', summary='Удалить проект')
-async def delete_poject(project_id: int) -> dict:
+async def delete_poject(project_id: int, token: str = Depends(get_token)) -> dict:
     check = await ProjectDAO.delete(id = project_id)
     if check:
         return {'message': f'Проект с id{project_id} удален успешно'}

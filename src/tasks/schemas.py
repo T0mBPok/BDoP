@@ -17,6 +17,7 @@ class Task_add(BaseModel):
     name: str
     category_color: int
     performer: str | None = Field(None, description='Someone or the author')
+    author: str
     description: str
     deadline: date
     project_id: int

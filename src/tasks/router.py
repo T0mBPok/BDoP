@@ -1,17 +1,18 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from src.tasks.rb import RBTask
 from src.tasks.dao import TaskDAO
 from src.tasks.schemas import Task_add, Task_get, Task_update
+from src.users.dependencies import get_token
 
 
 router = APIRouter(prefix='/tasks', tags=['Работа с задачами'])
 
 @router.get('/', summary='Get all tasks', response_model=list[Task_get])
-async def get_all_tasks(request_body: RBTask = Depends()):
+async def get_all_tasks(request_body: RBTask = Depends(), token: str = Depends(get_token)):
     return await TaskDAO.find_all(**request_body.to_dict())
 
 @router.post('/', summary='Add a task')
-async def add_task(task: Task_add):
+async def add_task(task: Task_add, token: str = Depends(get_token)):
     check = await TaskDAO.add(**task.model_dump())
     if check:
         return {'message': 'The task added succesfully', 'task':task}
@@ -19,7 +20,7 @@ async def add_task(task: Task_add):
         return {'message': 'The task was not added! ERROR!'}
     
 @router.put('/', summary='Update a task')
-async def update_task(task: Task_update) -> dict:
+async def update_task(task: Task_update, token: str = Depends(get_token)) -> dict:
     check = await TaskDAO.update(filter_by = {'id': task.id}, **task.model_dump())
     if check:
         return {"message": "Изменения успешно сохранены", "task": task}
@@ -27,7 +28,7 @@ async def update_task(task: Task_update) -> dict:
         return {"message": "Изменения не были сохранены"}
     
 @router.delete("/", summary='Удалить задание')
-async def delete_task(task_id: int) -> dict:
+async def delete_task(task_id: int, token: str = Depends(get_token)) -> dict:
     check = await TaskDAO.delete(filter_by = {'id': task_id})
     if check:
         return {'message': "Задача успешно удалена", 'id': task_id}

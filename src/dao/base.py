@@ -2,6 +2,7 @@ from sqlalchemy.future import select
 from sqlalchemy import update as sqlalchemy_update, delete as sqlalchemy_delete
 from sqlalchemy.exc import SQLAlchemyError
 from src.database import async_session_maker
+from src.users.dependencies import get_token
 
 
 class BaseDAO:
