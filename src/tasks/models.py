@@ -8,11 +8,13 @@ class Task(Base):
     id: Mapped[int_pk]
     name: Mapped[str]
     category_color: Mapped[int]
-    performer: Mapped[str_null_true]
-    author: Mapped[str]
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    performer_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     description: Mapped[str_null_true]
     created_at: Mapped[datetime]
     deadline: Mapped[date]
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
     
-    projects: Mapped["Project"] = relationship("Project", back_populates="tasks")
+    project: Mapped["Project"] = relationship("Project", back_populates="tasks")
+    performer = relationship("User", back_populates="attached_tasks", foreign_keys=[performer_id])
+    author = relationship("User", back_populates="authored_tasks", foreign_keys=[author_id])

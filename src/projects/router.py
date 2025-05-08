@@ -1,39 +1,47 @@
-from fastapi import APIRouter, Depends
-from src.users.dependencies import get_token
+from fastapi import APIRouter, Depends, HTTPException, status
+from src.users.dependencies import get_current_user
 from src.projects.dao import ProjectDAO
 from src.projects.schemas import Project_add, Project_get, Project_update
 from src.projects.rb import RBProject
 
 
 router = APIRouter(prefix='/projects', tags=['Работа с проектами'])
-
+Project_get.model_rebuild()
 @router.get('/', summary='Get all projects', response_model = list[Project_get])
-async def get_all_projects(request_body: RBProject = Depends(), token: str = Depends(get_token)):
-    return await ProjectDAO.find_all(**request_body.to_dict())
+async def get_all_projects(request_body: RBProject = Depends(), user: str = Depends(get_current_user)):
+    return await ProjectDAO.find_all_for_user(user, **request_body.to_dict())
 
 @router.post('/', summary='Add a project')
-async def add_projects(project: Project_add, token: str = Depends(get_token)):
-    check = await ProjectDAO.add(**project.model_dump())
+async def add_projects(project: Project_add, user: str = Depends(get_current_user)):
+    check = await ProjectDAO.add(author_id = user.id, **project.model_dump())
     if check:
         return {'message': 'project was succesfully added', 'project':project}
     else:
         return {'message': 'error adding project'}
     
 @router.put('/', summary='Update a project')
-async def update_project(project: Project_update, token: str = Depends(get_token)) -> dict:
-    check = await ProjectDAO.update(filter_by={'id': project.id}, 
-                                    name = project.name,
-                                    description = project.description,
-                                    category_color = project.category_color)
+async def update_project(project: Project_update, user: str = Depends(get_current_user)) -> dict:
+    update_project = project.model_dump(exclude_unset=True)
+    project_id = update_project.pop('id')
+    
+    check = await ProjectDAO.update(filter_by={'id': project_id}, 
+                                    user = user,
+                                    **update_project)
     if check:
         return {'message': "Значения успешно изменены", 'project': project}
     else:
-        return {'messgae': "Ошибка при изменении значений"}
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Проект не найден или вы не являетесь автором"
+        )
     
 @router.delete('/', summary='Удалить проект')
-async def delete_poject(project_id: int, token: str = Depends(get_token)) -> dict:
-    check = await ProjectDAO.delete(id = project_id)
+async def delete_poject(project_id: int, user: str = Depends(get_current_user)) -> dict:
+    check = await ProjectDAO.delete(id = project_id, user = user)
     if check:
-        return {'message': f'Проект с id{project_id} удален успешно'}
+        return {'message': f'Проект с id {project_id} удален успешно'}
     else:
-        return {'message': 'Проект не удалось удалить'}
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Проект не найден или вы не являетесь автором"
+        )

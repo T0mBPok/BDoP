@@ -8,6 +8,7 @@ from src.users.router import router as users_router
 app = FastAPI()
 PORT = 8080
 
+
 app.include_router(tasks_router)
 app.include_router(projects_router)
 app.include_router(users_router)
