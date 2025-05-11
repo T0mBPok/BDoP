@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, Response, status, Depends
 from src.users.auth import get_password_hash, authenticate_user, create_access_token
 from src.users.dao import UserDAO
-from src.users.schemas import UserRegister, UserAuth
+from src.users.schemas import UserRegister, UserAuth, GetUserInfo
+from src.users.dependencies import get_current_user
 
 
-router = APIRouter(prefix='/auth', tags=['Auth'])
+router = APIRouter(prefix='/user', tags=['Auth'])
 
 @router.post('/register/')
 async def register_user(user_data: UserRegister) -> dict:
@@ -33,3 +34,14 @@ async def auth_user(response: Response, user_data: UserAuth) -> dict:
 async def logout_user(response: Response):
     response.delete_cookie(key="user_access_token")
     return {'message': 'Пользователь успешно вышел из системы'}
+
+@router.get("/current_user", summary="Get current user info", response_model=GetUserInfo)
+async def get_current_user(user: str = Depends(get_current_user)):
+    return user
+
+@router.get('/find_user', summary="Find another user", response_model=GetUserInfo)
+async def find_user(name: str):
+    user = await UserDAO.find_user(username=name)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
+    return user

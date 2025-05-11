@@ -25,4 +25,8 @@ class Project_update(BaseModel):
     id: int
     category_color: int | None = None
     name: str | None = None
-    description: str | None = None       
+    description: str | None = None 
+    
+class Project_add_users(BaseModel):
+    id: int
+    user_ids: list[int]

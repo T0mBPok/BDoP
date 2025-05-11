@@ -57,28 +57,25 @@ class BaseDAO:
     @classmethod
     async def update(cls, user: User, filter_by, **values):
         async with async_session_maker() as session:
-            async with session.begin():
-                if user.is_admin:
-                    query = (sqlalchemy_update(cls.model)
-                            .where(*[getattr(cls.model, key) == value for key, value in filter_by.items()])
-                            .values(**values)
-                            .execution_options(synchronise_session='fetch')
-                        )
-                else:
-                    query = (sqlalchemy_update(cls.model)
-                            .where(*[getattr(cls.model, key) == value for key, value in filter_by.items()])
-                            .where(cls.model.author_id == user.id)
-                            .values(**values)
-                            .execution_options(synchronise_session='fetch')
-                        )
-                    
-                result = await session.execute(query)
-                try:
-                    await session.commit()
-                except SQLAlchemyError as e:
-                    await session.rollback()
-                    raise e
-                return result.rowcount
+            if user.is_admin:
+                query = (sqlalchemy_update(cls.model)
+                        .where(*[getattr(cls.model, key) == value for key, value in filter_by.items()])
+                        .values(**values)
+                    )
+            else:
+                query = (sqlalchemy_update(cls.model)
+                        .where(*[getattr(cls.model, key) == value for key, value in filter_by.items()])
+                        .where(cls.model.author_id == user.id)
+                        .values(**values)
+                    )
+                
+            result = await session.execute(query)
+            try:
+                await session.commit()
+            except SQLAlchemyError as e:
+                await session.rollback()
+                raise e
+            return result.rowcount
             
     @classmethod
     async def delete(cls, user: User, delete_all: bool = False, **filter_by):
