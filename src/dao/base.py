@@ -1,6 +1,7 @@
 from sqlalchemy.future import select
 from sqlalchemy import update as sqlalchemy_update, delete as sqlalchemy_delete
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import selectinload
 from src.database import async_session_maker
 from src.users.models import User
 
@@ -37,8 +38,11 @@ class BaseDAO:
     @classmethod
     async def find_one_or_none_by_id(cls, data_id: int):
         async with async_session_maker() as session:
-            query = select(cls.model).filter_by(id=data_id)
-            result = await session.execute(query)
+            result = await session.execute(
+                select(User)
+                .options(selectinload(User.image))
+                .where(User.id == data_id)
+            )
             return result.scalar_one_or_none()
     
     @classmethod

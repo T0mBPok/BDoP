@@ -19,4 +19,9 @@ class GetUserInfo(BaseModel):
     username: str
     email: str
     created_at: datetime
+    image_url: str | None = None
     model_config = ConfigDict(from_attributes=True)
+    
+class UserUpdate(BaseModel):
+    username:str | None = None
+    email: EmailStr | None = None
