@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import date
+from sqlalchemy.sql.sqltypes import Date
 from typing import Annotated
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
@@ -15,8 +16,8 @@ async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 # настройка аннотаций
 int_pk = Annotated[int, mapped_column(primary_key=True)]
-created_at = Annotated[datetime, mapped_column(server_default=func.now())]
-updated_at = Annotated[datetime, mapped_column(server_default=func.now(), onupdate=datetime.now)]
+created_at = Annotated[date, mapped_column(Date, server_default=func.current_date())]
+updated_at = Annotated[date, mapped_column(Date, server_default=func.current_date(), onupdate=func.current_date())]
 str_uniq = Annotated[str, mapped_column(unique=True, nullable=False)]
 str_null_true = Annotated[str, mapped_column(nullable=True)]
 

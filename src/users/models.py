@@ -2,7 +2,6 @@ from src.database import Base, int_pk, str_uniq
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, text
 from src.associations import project_users
-from src.tasks.models import Task
 
 class User(Base):
     id: Mapped[int_pk]
@@ -22,12 +21,12 @@ class User(Base):
     attached_tasks: Mapped[list["Task"]] = relationship(
         "Task",
         back_populates="performer",
-        foreign_keys="[Task.performer_id]"
+        foreign_keys="[Task.performer_id, Subtit.performer_id]"
     )
     authored_tasks: Mapped[list["Task"]] = relationship(
         "Task",
         back_populates="author",
-        foreign_keys="[Task.author_id]",
+        foreign_keys="[Task.author_id, Subtit.author_id]",
         cascade="all, delete-orphan"
     )
     

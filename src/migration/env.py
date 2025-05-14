@@ -12,6 +12,7 @@ from src.tasks.models import Task
 from src.projects.models import Project
 from src.users.models import User
 from src.categories.models import Category
+from src.substacles.models import Subtit
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

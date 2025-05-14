@@ -7,7 +7,7 @@ class Project_get(BaseModel):
     id: int
     name: str
     description: str | None
-    category_color: int
+    category_id: int
     author_id: int
     created_at: datetime
     

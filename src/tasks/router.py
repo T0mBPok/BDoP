@@ -25,7 +25,8 @@ async def add_task(task: Task_add, user: str = Depends(get_current_user)):
     
 @router.put('/', summary='Update a task')
 async def update_task(task: Task_update, user: str = Depends(get_current_user)) -> dict:
-    check = await TaskDAO.update(user=user, filter_by = {'id': task.id}, **task.model_dump())
+    task_update = task.model_dump(exclude_unset=True)
+    check = await TaskDAO.update(user=user, filter_by = {'id': task.id}, **task_update)
     if check:
         return {"message": "Изменения успешно сохранены", "task": task}
     else:
