@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 from src.dao.base import BaseDAO
 from src.projects.models import Project
 from src.database import async_session_maker
@@ -5,6 +6,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import selectinload
 from src.users.models import User
+from src.categories.models import Category
 
 class ProjectDAO(BaseDAO):
     model = Project
@@ -24,12 +26,35 @@ class ProjectDAO(BaseDAO):
         
     @classmethod
     async def add(cls, author_id: int, user_ids: list[int] = [], **values):
-        async with async_session_maker() as session:
-            project = cls.model(**values, author_id=author_id)
-            
+        async with async_session_maker() as session:            
             author = await session.get(User, author_id)
-            if not author:
-                raise ValueError(f"User with id {author_id} not found")
+            # if not author:
+            #     raise HTTPException(
+            #         status_code=status.HTTP_404_NOT_FOUND,
+            #         detail=f"User with id {author_id} not found"
+            #     )
+
+            category_id = values.get("category_id")
+            if category_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Не введен id категории"
+                )
+
+            category = await session.get(Category, category_id)
+            if category is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Категория с id {category_id} не найдена"
+                )
+
+            if category.author_id != author_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Нет доступа к данной категории"
+                )
+            
+            project = cls.model(**values, author_id=author_id)
             project.users.append(author)
             
             if user_ids:

@@ -18,7 +18,7 @@ class Project_get(BaseModel):
 class Project_add(BaseModel):
     name: str
     description: str | None
-    category_color: int
+    category_id: int
     user_ids: list[int] | None = []
     
 class Project_update(BaseModel):
