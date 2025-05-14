@@ -18,7 +18,10 @@ async def add_task(task: Task_add, user: str = Depends(get_current_user)):
     if check:
         return {'message': 'The task added succesfully', 'task':task}
     else:
-        return {'message': 'The task was not added! ERROR!'}
+        raise HTTPException(
+            status_code=400, 
+            detail="Failed to add task: not all required fields are filled."
+            )
     
 @router.put('/', summary='Update a task')
 async def update_task(task: Task_update, user: str = Depends(get_current_user)) -> dict:

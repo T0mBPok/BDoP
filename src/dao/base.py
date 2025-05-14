@@ -1,6 +1,6 @@
 from sqlalchemy.future import select
-from sqlalchemy import update as sqlalchemy_update, delete as sqlalchemy_delete
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import update as sqlalchemy_update, delete as sqlalchemy_delete, and_
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.orm import selectinload
 from src.database import async_session_maker
 from src.users.models import User
@@ -17,16 +17,16 @@ class BaseDAO:
             return result.scalars().all()
         
     @classmethod
-    async def find_all_for_user(cls, user: User, **filters):
+    async def find_all_for_user(cls, user: str, **filters):
         async with async_session_maker() as session:
             query = select(cls.model).where(cls.model.author_id == user.id)
-
+            if user.is_admin:
+                query = select(cls.model)
             for attr, value in filters.items():
                 query = query.where(getattr(cls.model, attr) == value)
 
             result = await session.execute(query)
-            new_instance = result.scalars().unique().all()
-            return new_instance
+            return result.scalars().unique().all()
         
     @classmethod
     async def find_one_or_none(cls, **filter_by):
@@ -48,15 +48,17 @@ class BaseDAO:
     @classmethod
     async def add(cls, author_id: int, **values):
         async with async_session_maker() as session:
-            async with session.begin():
-                new_instance = cls.model(**values, author_id=author_id)
-                session.add(new_instance)
-                try:
-                    await session.commit()
-                except SQLAlchemyError as e:
-                    await session.rollback()
-                    raise e
-                return new_instance
+            new_instance = cls.model(**values, author_id=author_id)
+            session.add(new_instance)
+            try:
+                await session.commit()
+            except SQLAlchemyError  as e:
+                await session.rollback()
+                raise e
+            except IntegrityError  as e:
+                await session.rollback()
+                raise e
+            return new_instance
             
     @classmethod
     async def update(cls, user: User, filter_by, **values):
@@ -87,16 +89,25 @@ class BaseDAO:
             raise ValueError("Either delete_all must be True or filter_by must be provided")
 
         async with async_session_maker() as session:
-            async with session.begin():
-                if user.is_admin:
-                    query = sqlalchemy_delete(cls.model)
-                else:
-                    query = sqlalchemy_delete(cls.model).where(cls.model.author_id == user.id)
-                    
+            query = sqlalchemy_delete(cls.model)
+            conditions = []
+
+            if not user.is_admin:
+                conditions.append(cls.model.author_id == user.id)
+
+            if not delete_all:
+                for key, value in filter_by.items():
+                    column = getattr(cls.model, key, None)
+                    if column is None:
+                        raise ValueError(f"Invalid filter column: {key}")
+                    conditions.append(column == value)
+            if conditions:
+                query = query.where(and_(*conditions))
+
+            try:
                 result = await session.execute(query)
-                try:
-                    await session.commit()
-                except SQLAlchemyError as e:
-                    await session.rollback()
-                    raise e
-                return result.rowcount
+                await session.commit()
+            except SQLAlchemyError as e:
+                await session.rollback()
+                raise e
+            return result.rowcount
