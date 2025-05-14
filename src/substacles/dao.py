@@ -8,6 +8,7 @@ from src.projects.models import Project
 from fastapi import status, HTTPException
 from src.users.models import User
 from src.tasks.models import Task
+from datetime import date
 
 
 class SubtitDAO(BaseDAO):
@@ -17,8 +18,7 @@ class SubtitDAO(BaseDAO):
     async def add(cls, author_id: int, performer_id: int | None, task_id: int, **values):
         async with async_session_maker() as session:
             performer_id = author_id if performer_id is None else performer_id
-            result = await session.get(Task, task_id)
-            task = result.scalar().first()
+            task = await session.get(Task, task_id)
             project_id = task.project_id
             if project_id is None:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Не все поле заполнены!")
@@ -38,7 +38,19 @@ class SubtitDAO(BaseDAO):
                 if user not in project.users:
                     project.users.append(user)
             
-            new_instance = cls.model(**values, author_id=author_id, performer_id = performer_id, task_id = task_id, category_id = project.category_id, project_id=project_id)
+            deadline: date = values.get('deadline')
+            creation_date: date = date.today() 
+            if 'importance_color' not in values or values['importance_color'] is None:
+                days_left = (deadline - creation_date).days
+                if days_left >= 3:
+                    importance_color = 4  # зелёный
+                elif days_left == 2:
+                    importance_color = 2  # оранжевый
+                else:
+                    importance_color = 1  # красный
+                values['importance_color'] = importance_color
+            
+            new_instance = cls.model(**values, author_id=author_id, performer_id = performer_id, task_id = task_id, category_id = project.category_id, project_id=project_id, is_completed = False)
             session.add(new_instance)
             try:
                 await session.commit()

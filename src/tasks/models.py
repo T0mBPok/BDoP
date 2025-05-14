@@ -16,6 +16,7 @@ class Task(Base):
     deadline: Mapped[date]
     importance_color: Mapped[int]
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
+    is_completed: Mapped[bool]
     
     project: Mapped["Project"] = relationship("Project", back_populates="tasks")
     performer = relationship("User", back_populates="attached_tasks", foreign_keys=[performer_id])

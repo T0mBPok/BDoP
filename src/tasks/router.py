@@ -36,8 +36,8 @@ async def update_task(task: Task_update, user: str = Depends(get_current_user)) 
         )
     
 @router.delete("/", summary='Удалить задание')
-async def delete_task(task_id: int, user: str = Depends(get_current_user)) -> dict:
-    check = await TaskDAO.delete(user=user, id=task_id)
+async def delete_task(task_id: int | None = None, delete_all: bool = False, user: str = Depends(get_current_user)) -> dict:
+    check = await TaskDAO.delete(user=user, id=task_id, delete_all=delete_all)
     if check:
         return {'message': "Задача успешно удалена", 'id': task_id}
     else:

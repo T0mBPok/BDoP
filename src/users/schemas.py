@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
-from datetime import datetime
+from datetime import datetime, date
 
 class UserRegister(BaseModel):
     email: EmailStr
@@ -14,12 +14,39 @@ class UserGet(BaseModel):
     id: int
     username: str
     email: str
+    model_config = ConfigDict(from_attributes=True)
+
+class TaskResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+    importance_color: int
+    category_id: int
+    performer_id: int
+    author_id: int
+    project_id: int
+    deadline: date
+    model_config = ConfigDict(from_attributes=True)
+    
+class SubtitResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+    importance_color: int
+    category_id: int
+    performer_id: int
+    author_id: int
+    task_id: int
+    deadline: date
+    model_config = ConfigDict(from_attributes=True)
 
 class GetUserInfo(BaseModel):
     username: str
     email: str
     created_at: datetime
     image_url: str | None = None
+    attached_tasks: list[TaskResponse] = []
+    attached_substacles: list[SubtitResponse] = []
     model_config = ConfigDict(from_attributes=True)
     
 class UserUpdate(BaseModel):

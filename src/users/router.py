@@ -42,16 +42,23 @@ async def logout_user(response: Response):
     return {'message': 'Пользователь успешно вышел из системы'}
 
 @router.get("/current_user", summary="Get current user info", response_model=GetUserInfo)
-async def get_user(request: Request, user: str = Depends(get_current_user)):
+async def get_user(request: Request, user: User = Depends(get_current_user), is_completed: bool = False):
+    user_with_tasks = await UserDAO.get_user_with_attached_tasks(user.id, is_completed)
+    if not user_with_tasks:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
     image_url = None
-    if user.image:
+    if user_with_tasks.image:
         base_url = str(request.base_url).rstrip('/')
-        image_url = f"{base_url}/{user.image.filepath}"
+        image_url = f"{base_url}/{user_with_tasks.image.filepath}"
+
     return GetUserInfo(
-        username = user.username,
-        email = user.email,
-        created_at = user.created_at,
-        image_url = image_url
+        username=user_with_tasks.username,
+        email=user_with_tasks.email,
+        created_at=user_with_tasks.created_at,
+        image_url=image_url,
+        attached_tasks=user_with_tasks.attached_tasks,
+        attached_substacles=user_with_tasks.attached_substacles
     )
 
 @router.get('/find_user', summary="Find another user", response_model=GetUserInfo)

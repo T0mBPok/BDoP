@@ -1,8 +1,8 @@
 from fastapi import HTTPException, status
 from src.dao.base import BaseDAO
-from src.projects.models import Project
+from src.projects.models import Project, ProjectImage
 from src.database import async_session_maker
-from sqlalchemy import and_, select
+from sqlalchemy import select, update as sqlal_update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import selectinload
 from src.users.models import User
@@ -106,10 +106,10 @@ class ProjectDAO(BaseDAO):
     @classmethod
     async def find_all_for_user(cls, user: User, **filters):
         async with async_session_maker() as session:
-            query = select(cls.model).options(selectinload(cls.model.users))
+            query = select(cls.model).options(selectinload(cls.model.users), selectinload(cls.model.project_image))
 
             if not user.is_admin:
-                query = query.join(cls.model.users).where(User.id == user.id)
+                 query = select(cls.model).options(selectinload(cls.model.project_image), selectinload(cls.model.users)).where(cls.model.author_id == user.id)
 
             for attr, value in filters.items():
                 query = query.where(getattr(cls.model, attr) == value)
@@ -117,3 +117,13 @@ class ProjectDAO(BaseDAO):
             result = await session.execute(query)
             projects = result.scalars().unique().all()
             return projects
+    
+    async def load_icon(project_id: int, filepath: str):
+        async with async_session_maker() as session:
+            async with session.begin():
+                image = ProjectImage(filepath=filepath)
+                session.add(image)
+                await session.flush()
+                await session.execute(sqlal_update(Project)
+                                      .where(Project.id == project_id)
+                                      .values(image_id=image.id))

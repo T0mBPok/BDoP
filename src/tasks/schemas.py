@@ -13,6 +13,7 @@ class Task_get(BaseModel):
     created_at: date
     deadline: date
     project_id: int
+    is_completed: bool
 
 class Task_add(BaseModel):
     name: str
@@ -20,7 +21,7 @@ class Task_add(BaseModel):
     description: str
     deadline: date
     project_id: int
-    importance_color: int
+    importance_color: int | None = None
     
 class Task_update(BaseModel):
     id: int
@@ -28,3 +29,5 @@ class Task_update(BaseModel):
     performer_id: int | None = None
     description: str | None = None
     deadline: date | None = None
+    is_completed: bool | None = None
+    importance_color: int | None = None

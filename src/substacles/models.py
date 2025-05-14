@@ -20,6 +20,7 @@ class Subtit(Base):
     importance_color: Mapped[int]
     task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id", ondelete="CASCADE"))
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="CASCADE"))
+    is_completed: Mapped[bool]
     
     category: Mapped["Category"] = relationship("Category")
     author: Mapped["User"] = relationship("User", foreign_keys=[author_id])

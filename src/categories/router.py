@@ -39,8 +39,8 @@ async def update_category(category: CategoryGet, user: User = Depends(get_curren
         )
 
 @router.delete('/', summary='Delete a category')
-async def delete_category(category_id: int, user: str = Depends(get_current_user)):
-    check = await CategoryDAO.delete(id = category_id, user = user)
+async def delete_category(category_id: int | None = None, delete_all: bool = False, user: str = Depends(get_current_user)):
+    check = await CategoryDAO.delete(id = category_id, user = user, delete_all=delete_all)
     if check:
         return {"message": "Категория успешно удалена"}
     else:

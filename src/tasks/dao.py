@@ -8,6 +8,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import selectinload
 from src.projects.models import Project
 from src.users.models import User
+from datetime import date
 
 class TaskDAO(BaseDAO):
     model = Task
@@ -34,7 +35,22 @@ class TaskDAO(BaseDAO):
                 if user not in project.users:
                     project.users.append(user)
             
-            new_instance = cls.model(**values, author_id=author_id, performer_id = performer_id, project_id = project_id, category_id = project.category_id)
+            deadline: date = values.get('deadline')
+            creation_date: date = date.today() 
+
+            if 'importance_color' not in values or values['importance_color'] is None:
+                days_left = (deadline - creation_date).days
+                if days_left >= 3:
+                    importance_color = 4  # зелёный
+                elif days_left == 2:
+                    importance_color = 3  # жёлтый
+                elif days_left == 1:
+                    importance_color = 2  # оранжевый
+                else:
+                    importance_color = 1  # красный
+                values['importance_color'] = importance_color
+                
+            new_instance = cls.model(**values, author_id=author_id, performer_id = performer_id, project_id = project_id, category_id = project.category_id, is_completed = False)
             session.add(new_instance)
             try:
                 await session.commit()

@@ -11,6 +11,7 @@ from src.substacles.router import router as substacles_router
 app = FastAPI()
 PORT = 8080
 app.mount("/user_image", StaticFiles(directory="user_image"), name="user_image")
+app.mount("/project_image", StaticFiles(directory="project_image"), name="project_image")
 
 app.include_router(category_router)
 app.include_router(projects_router)

@@ -10,6 +10,7 @@ class Project_get(BaseModel):
     category_id: int
     author_id: int
     created_at: datetime
+    image_url: str | None = None
     
     users: List["UserGet"] = []
     

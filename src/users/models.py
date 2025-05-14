@@ -21,7 +21,12 @@ class User(Base):
     attached_tasks: Mapped[list["Task"]] = relationship(
         "Task",
         back_populates="performer",
-        foreign_keys="[Task.performer_id, Subtit.performer_id]"
+        foreign_keys="[Task.performer_id]"
+    )
+    attached_substacles: Mapped[list["Subtit"]] = relationship(
+        "Subtit",
+        back_populates="performer",
+        foreign_keys="[Subtit.performer_id]"
     )
     authored_tasks: Mapped[list["Task"]] = relationship(
         "Task",

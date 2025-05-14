@@ -36,8 +36,8 @@ async def update_subtit(subtit: UpdateSubtit, user: str = Depends(get_current_us
         )
         
 @router.delete('/', summary='Delete a subtit')
-async def delete_subtit(subtit_id: int, user:str = Depends(get_current_user)):
-    check = await SubtitDAO.delete(user=user, id=subtit_id)
+async def delete_subtit(subtit_id: int | None = None, delete_all: bool = False, user:str = Depends(get_current_user)):
+    check = await SubtitDAO.delete(user=user, id=subtit_id, delete_all=delete_all)
     if check:
         return {'message': "Задача успешно удалена", 'id': subtit_id}
     else:
