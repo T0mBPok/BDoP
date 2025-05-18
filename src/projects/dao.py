@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from src.dao.base import BaseDAO
-from src.projects.models import Project, ProjectImage
+from src.projects.models import Project
 from src.database import async_session_maker
 from sqlalchemy import select, update as sqlal_update
 from sqlalchemy.exc import SQLAlchemyError
@@ -28,11 +28,6 @@ class ProjectDAO(BaseDAO):
     async def add(cls, author_id: int, user_ids: list[int] = [], **values):
         async with async_session_maker() as session:            
             author = await session.get(User, author_id)
-            # if not author:
-            #     raise HTTPException(
-            #         status_code=status.HTTP_404_NOT_FOUND,
-            #         detail=f"User with id {author_id} not found"
-            #     )
 
             category_id = values.get("category_id")
             if category_id is None:
@@ -106,10 +101,10 @@ class ProjectDAO(BaseDAO):
     @classmethod
     async def find_all_for_user(cls, user: User, **filters):
         async with async_session_maker() as session:
-            query = select(cls.model).options(selectinload(cls.model.users), selectinload(cls.model.project_image))
+            query = select(cls.model).options(selectinload(cls.model.users), selectinload(cls.model.image))
 
             if not user.is_admin:
-                 query = select(cls.model).options(selectinload(cls.model.project_image), selectinload(cls.model.users)).where(cls.model.author_id == user.id)
+                 query = select(cls.model).options(selectinload(cls.model.image), selectinload(cls.model.users)).where(cls.model.author_id == user.id)
 
             for attr, value in filters.items():
                 query = query.where(getattr(cls.model, attr) == value)
@@ -117,13 +112,3 @@ class ProjectDAO(BaseDAO):
             result = await session.execute(query)
             projects = result.scalars().unique().all()
             return projects
-    
-    async def load_icon(project_id: int, filepath: str):
-        async with async_session_maker() as session:
-            async with session.begin():
-                image = ProjectImage(filepath=filepath)
-                session.add(image)
-                await session.flush()
-                await session.execute(sqlal_update(Project)
-                                      .where(Project.id == project_id)
-                                      .values(image_id=image.id))

@@ -8,7 +8,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import selectinload
 from src.projects.models import Project
 from src.users.models import User
-from datetime import date
+from datetime import date, datetime
 
 class TaskDAO(BaseDAO):
     model = Task
@@ -16,11 +16,23 @@ class TaskDAO(BaseDAO):
     @classmethod
     async def add(cls, author_id: int, performer_id: int | None, project_id: int, **values):
         async with async_session_maker() as session:
-            performer_id = author_id if performer_id is None else performer_id
+            if performer_id is None or performer_id <= 0:
+                performer_id = author_id
             if project_id is None:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Не все поле заполнены!")
             
+            deadline: date = values.get('deadline')
+            today = date.today()
+
+            if deadline < today:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Deadline не может быть в прошлом (текущая дата: {today.isoformat()})"
+                )
+            
             project = await session.get(Project, project_id)
+            if not project: 
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Проект с введенным id не существует")
             if performer_id:
                 result = await session.execute(select(Project)
                                                 .options(selectinload(Project.users))
@@ -35,7 +47,6 @@ class TaskDAO(BaseDAO):
                 if user not in project.users:
                     project.users.append(user)
             
-            deadline: date = values.get('deadline')
             creation_date: date = date.today() 
 
             if 'importance_color' not in values or values['importance_color'] is None:

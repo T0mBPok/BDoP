@@ -24,9 +24,9 @@ class Project_add(BaseModel):
     
 class Project_update(BaseModel):
     id: int
-    category_color: int | None = None
     name: str | None = None
     description: str | None = None 
+    image_id: int | None = None
     
 class Project_add_users(BaseModel):
     id: int

@@ -49,6 +49,13 @@ class GetUserInfo(BaseModel):
     attached_substacles: list[SubtitResponse] = []
     model_config = ConfigDict(from_attributes=True)
     
+class GetAnotherUserInfo(BaseModel):
+    username: str
+    email: str
+    created_at: datetime
+    image_url: str | None = None
+    
 class UserUpdate(BaseModel):
     username:str | None = None
     email: EmailStr | None = None
+    image_id: int | None = None

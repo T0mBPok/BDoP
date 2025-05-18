@@ -1,17 +1,14 @@
 from fastapi import APIRouter, File, HTTPException, Response, status, Depends, UploadFile, Request
-from sqlalchemy import or_
 from src.users.auth import get_password_hash, authenticate_user, create_access_token
 from src.users.dao import UserDAO
 from src.users.models import User
-from src.users.schemas import UserRegister, UserAuth, GetUserInfo, UserUpdate
+from src.users.schemas import UserRegister, UserAuth, GetUserInfo, UserUpdate, GetAnotherUserInfo
 from src.users.dependencies import get_current_user
+from src.users.rb import RBUser
 import os, shutil
 
 
 router = APIRouter(prefix='/user', tags=['Работа с пользователями'])
-UPLOAD_DIR = "./user_image"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg']
 
 @router.post('/register/')
 async def register_user(user_data: UserRegister) -> dict:
@@ -61,12 +58,10 @@ async def get_user(request: Request, user: User = Depends(get_current_user), is_
         attached_substacles=user_with_tasks.attached_substacles
     )
 
-@router.get('/find_user', summary="Find another user", response_model=GetUserInfo)
-async def find_user(name: str):
-    user = await UserDAO.find_user(username=name)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
-    return user
+@router.get('/find_user', summary="Find another user", response_model=list[GetAnotherUserInfo])
+async def find_user(request_body: RBUser = Depends(), user: str = Depends(get_current_user)):
+    users = await UserDAO.find_all_for_user(**request_body.to_dict())
+    return users
 
 @router.put('/', summary = 'Change user info')
 async def change_user_info(user_data: UserUpdate, user: str = Depends(get_current_user)) -> dict:
@@ -76,26 +71,3 @@ async def change_user_info(user_data: UserUpdate, user: str = Depends(get_curren
     
     await UserDAO.update(user, **update_user)
     return {'message': "Данные успешно обновлены"}
-
-@router.put('/load_icon', summary="Загрузить иконку пользователя")
-async def load_icon(file: UploadFile = File(...), user: str = Depends(get_current_user)) -> dict:
-    file_extension = os.path.splitext(file.filename)[1]
-    if file_extension.lower() not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Недопустимое расширение файла. Разрешены только: {', '.join(ALLOWED_EXTENSIONS)}"
-        )
-        
-    file_loc = f"{UPLOAD_DIR}/{user.id}{file_extension}"
-    
-    try:
-        with open(file_loc, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Ошибка при сохранении файла: {e}"
-        )
-        
-    await UserDAO.load_icon(user, filepath=file_loc)
-    return {'message': "Иконка успешно загружена"}

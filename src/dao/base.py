@@ -1,9 +1,11 @@
 from sqlalchemy.future import select
-from sqlalchemy import update as sqlalchemy_update, delete as sqlalchemy_delete, and_
+from sqlalchemy import update as sqlalchemy_update, delete as sqlalchemy_delete, and_, exists
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.orm import selectinload
 from src.database import async_session_maker
 from src.users.models import User
+from src.images.models import Image
+from fastapi import HTTPException
 
 
 class BaseDAO:
@@ -63,6 +65,21 @@ class BaseDAO:
     @classmethod
     async def update(cls, user: User, filter_by, **values):
         async with async_session_maker() as session:
+            image_id = values.get('image_id')
+            if image_id is not None:
+                stmt = select(exists().where(Image.id == image_id))
+                image_exists = await session.scalar(stmt)
+                if not image_exists:
+                    raise HTTPException(status_code=400, detail=f"Image with id={image_id} does not exist")
+
+            # Проверка performer_id
+            performer_id = values.get('performer_id')
+            if performer_id is not None:
+                stmt = select(exists().where(User.id == performer_id))
+                performer_exists = await session.scalar(stmt)
+                if not performer_exists:
+                    raise HTTPException(status_code=400, detail=f"User (performer) with id={performer_id} does not exist")
+            
             if user.is_admin:
                 query = (sqlalchemy_update(cls.model)
                         .where(*[getattr(cls.model, key) == value for key, value in filter_by.items()])

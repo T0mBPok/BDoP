@@ -8,8 +8,7 @@ class Category(Base):
     id: Mapped[int_pk]
     author_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
     name: Mapped[str_uniq]
-    color: Mapped[int]
+    color: Mapped[str]
     
-    user: Mapped["User"] = relationship("User")
-    
+    user: Mapped["User"] = relationship("User")   
         

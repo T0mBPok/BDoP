@@ -39,6 +39,14 @@ class SubtitDAO(BaseDAO):
                     project.users.append(user)
             
             deadline: date = values.get('deadline')
+            today = date.today()
+
+            if deadline < today:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Deadline не может быть в прошлом (текущая дата: {today.isoformat()})"
+                )            
+            
             creation_date: date = date.today() 
             if 'importance_color' not in values or values['importance_color'] is None:
                 days_left = (deadline - creation_date).days
