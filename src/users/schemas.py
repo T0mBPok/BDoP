@@ -59,3 +59,4 @@ class UserUpdate(BaseModel):
     username:str | None = None
     email: EmailStr | None = None
     image_id: int | None = None
+    password: str | None = Field(min_length=8, max_length=16, default=None)

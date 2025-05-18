@@ -1,11 +1,10 @@
-from fastapi import APIRouter, File, HTTPException, Response, status, Depends, UploadFile, Request
+from fastapi import APIRouter, HTTPException, Response, status, Depends, UploadFile, Request
 from src.users.auth import get_password_hash, authenticate_user, create_access_token
 from src.users.dao import UserDAO
 from src.users.models import User
 from src.users.schemas import UserRegister, UserAuth, GetUserInfo, UserUpdate, GetAnotherUserInfo
 from src.users.dependencies import get_current_user
 from src.users.rb import RBUser
-import os, shutil
 
 
 router = APIRouter(prefix='/user', tags=['Работа с пользователями'])
@@ -66,6 +65,8 @@ async def find_user(request_body: RBUser = Depends(), user: str = Depends(get_cu
 @router.put('/', summary = 'Change user info')
 async def change_user_info(user_data: UserUpdate, user: str = Depends(get_current_user)) -> dict:
     update_user = user_data.model_dump(exclude_unset=True)
+    if 'password' in update_user:
+        update_user['password'] = get_password_hash(user_data.password)
     if not update_user:
         raise ValueError('Нет полей для обновления')
     
