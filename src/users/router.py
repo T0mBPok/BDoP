@@ -52,6 +52,7 @@ async def get_user(request: Request, user: User = Depends(get_current_user), is_
         image_url = f"{base_url}/{user_with_tasks.image.filepath}"
 
     return GetUserInfo(
+        id=user_with_tasks.id,
         username=user_with_tasks.username,
         email=user_with_tasks.email,
         created_at=user_with_tasks.created_at,

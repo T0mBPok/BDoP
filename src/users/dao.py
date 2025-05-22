@@ -62,7 +62,7 @@ class UserDAO(BaseDAO):
     @classmethod
     async def find_all_for_user(cls, **filters):
         async with async_session_maker() as session:
-            query = select(cls.model)
+            query = select(cls.model).where(cls.model.username!="admin")
             for attr, value in filters.items():
                 query = query.where(getattr(cls.model, attr) == value)
 

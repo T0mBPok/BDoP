@@ -41,6 +41,7 @@ class SubtitResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class GetUserInfo(BaseModel):
+    id: int
     username: str
     email: str
     created_at: datetime
