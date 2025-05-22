@@ -1,6 +1,5 @@
-from datetime import date, datetime
-from pydantic import BaseModel, Field
-from src.users.schemas import UserGet
+from datetime import date
+from pydantic import BaseModel, EmailStr
 
 
 class Task_get(BaseModel):
@@ -17,7 +16,7 @@ class Task_get(BaseModel):
 
 class Task_add(BaseModel):
     name: str
-    performer_id: int | None = Field(None, description='Someone or the author')
+    performer_email: EmailStr | None = None
     description: str
     deadline: date
     project_id: int

@@ -15,9 +15,15 @@ class SubtitDAO(BaseDAO):
     model = Subtit
     
     @classmethod
-    async def add(cls, author_id: int, performer_id: int | None, task_id: int, **values):
+    async def add(cls, author_id: int, task_id: int, **values):
         async with async_session_maker() as session:
-            performer_id = author_id if performer_id is None else performer_id
+            performer_email = values.pop('performer_email')
+            if performer_email is None:
+                performer_id = author_id
+            else:
+                user = await cls.set_performer(performer_email)
+                performer_id = user.id
+                
             task = await session.get(Task, task_id)
             project_id = task.project_id
             if project_id is None:
@@ -30,11 +36,6 @@ class SubtitDAO(BaseDAO):
                                                 .where(Project.id == project_id)
                                                 .order_by(Project.id))
                 project = result.scalars().one()
-                user = await session.get(User, performer_id)
-                if not user:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND, 
-                        detail="Пользователь с введенным id не существует")
                 if user not in project.users:
                     project.users.append(user)
             

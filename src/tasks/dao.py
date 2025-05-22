@@ -8,16 +8,21 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import selectinload
 from src.projects.models import Project
 from src.users.models import User
-from datetime import date, datetime
+from datetime import date
 
 class TaskDAO(BaseDAO):
     model = Task
     
     @classmethod
-    async def add(cls, author_id: int, performer_id: int | None, project_id: int, **values):
+    async def add(cls, author_id: int, project_id: int, **values):
         async with async_session_maker() as session:
-            if performer_id is None or performer_id <= 0:
+            performer_email = values.pop('performer_email')
+            if performer_email is None:
                 performer_id = author_id
+            else:
+                user = await cls.set_performer(performer_email)
+                performer_id = user.id
+                
             if project_id is None:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Не все поле заполнены!")
             
@@ -39,11 +44,6 @@ class TaskDAO(BaseDAO):
                                                 .where(Project.id == project_id)
                                                 .order_by(Project.id))
                 project = result.scalars().one()
-                user = await session.get(User, performer_id)
-                if not user:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND, 
-                        detail="Пользователь с введенным id не существует")
                 if user not in project.users:
                     project.users.append(user)
             
@@ -84,3 +84,11 @@ class TaskDAO(BaseDAO):
             result = await session.execute(query)
             new_instance = result.scalars().unique().all()
             return new_instance
+        
+    # async def create_user(self, email: str):
+    #     async with async_session_maker() as session:
+    #         user_data = {"email": email}
+    #         user_data['username'] = email.split('@')[0]
+    #         user_data['password'] = generate_password()
+            
+            

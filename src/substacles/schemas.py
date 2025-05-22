@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from datetime import date
 
 
@@ -6,7 +6,7 @@ class add_subtit(BaseModel):
     name: str
     description: str | None = None
     importance_color: int | None = None
-    performer_id: int | None = None
+    performer_email: EmailStr | None = None
     deadline: date
     task_id: int
 

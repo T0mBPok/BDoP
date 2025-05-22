@@ -6,7 +6,7 @@ from src.images.models import Image
 
 class User(Base):
     id: Mapped[int_pk]
-    username: Mapped[str_uniq]
+    username: Mapped[str]
     email: Mapped[str_uniq]
     password: Mapped[str]
     is_admin: Mapped[bool] = mapped_column(default = False, server_default = text('false'))

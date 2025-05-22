@@ -5,7 +5,9 @@ from sqlalchemy.orm import selectinload
 from src.database import async_session_maker
 from src.users.models import User
 from src.images.models import Image
-from fastapi import HTTPException
+from fastapi import HTTPException, status
+from src.users.auth import generate_password, get_password_hash
+from src.email import send_userinfo_email
 
 
 class BaseDAO:
@@ -103,8 +105,8 @@ class BaseDAO:
     @classmethod
     async def delete(cls, user: User, delete_all: bool = False, **filter_by):
         if not delete_all and not filter_by:
-            raise ValueError("Either delete_all must be True or filter_by must be provided")
-
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                                detail="Either delete_all must be True or filter_by must be provided")
         async with async_session_maker() as session:
             query = sqlalchemy_delete(cls.model)
             conditions = []
@@ -128,3 +130,24 @@ class BaseDAO:
                 await session.rollback()
                 raise e
             return result.rowcount
+        
+    @staticmethod
+    async def set_performer(performer_email: str):
+        async with async_session_maker() as session:
+            result = await session.execute(select(User).where(User.email == performer_email))
+            user = result.scalars().first()
+            if not user:
+                user_data = {"email": performer_email}
+                user_data['username'] = performer_email.split('@')[0]
+                password = generate_password()
+                user_data['password'] = get_password_hash(password)
+                user = User(**user_data)
+                session.add(user)
+                await session.flush()
+                await send_userinfo_email(performer_email, password)
+            try:
+                await session.commit()
+            except SQLAlchemyError as e:
+                await session.rollback()
+                raise e
+            return user

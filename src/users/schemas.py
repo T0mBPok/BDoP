@@ -60,3 +60,14 @@ class UserUpdate(BaseModel):
     email: EmailStr | None = None
     image_id: int | None = None
     password: str | None = Field(min_length=8, max_length=16, default=None)
+    
+class ResetPass(BaseModel):
+    email: EmailStr
+    
+class VerifyResetPass(BaseModel):
+    email: EmailStr
+    code: str
+    
+class NewPass(BaseModel):
+    new_pass: str
+    token: str

@@ -1,17 +1,20 @@
-from fastapi import APIRouter, HTTPException, Response, status, Depends, UploadFile, Request
-from src.users.auth import get_password_hash, authenticate_user, create_access_token
+from fastapi import APIRouter, HTTPException, Response, status, Depends, Request
+from src.users.auth import get_password_hash, create_access_token, verify_password
 from src.users.dao import UserDAO
 from src.users.models import User
 from src.users.schemas import UserRegister, UserAuth, GetUserInfo, UserUpdate, GetAnotherUserInfo
 from src.users.dependencies import get_current_user
 from src.users.rb import RBUser
+from src.users.schemas import ResetPass, VerifyResetPass
+from src.email import send_reset_email
+from src.config import redis_client
 
 
 router = APIRouter(prefix='/user', tags=['Работа с пользователями'])
 
 @router.post('/register/')
 async def register_user(user_data: UserRegister) -> dict:
-    user = await UserDAO.find_all(email = user_data.email, username = user_data.username)
+    user = await UserDAO.find_all(email = user_data.email)
     if user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -24,11 +27,11 @@ async def register_user(user_data: UserRegister) -> dict:
 
 @router.post('/login/')
 async def auth_user(response: Response, user_data: UserAuth) -> dict:
-    check = await authenticate_user(email=user_data.email, password = user_data.password)
-    if check is None:
+    user = await UserDAO.find_one_or_none(email=user_data.email)
+    if not user or verify_password(plain_pass=user_data.password, hashed_pass=user.password) is False:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail='Неверная почта или пароль')
-    access_token = create_access_token({"sub": str(check.id)})
+    access_token = create_access_token({"sub": str(user.id)})
     response.set_cookie(key='user_access_token', value=access_token, httponly=True)
     return {'access_token': access_token, 'refresh_token': None}
     
@@ -72,3 +75,29 @@ async def change_user_info(user_data: UserUpdate, user: str = Depends(get_curren
     
     await UserDAO.update(user, **update_user)
     return {'message': "Данные успешно обновлены"}
+
+@router.post('/pass_reset/request')
+async def pass_reset(data: ResetPass):
+    check = await UserDAO.find_all(email=data.email)
+    if not check:
+        return {'message': 'Письмо с кодом было отправлено на почту'}
+    await send_reset_email(data.email)
+    return {'message': 'Письмо с кодом было отправлено на почту'}
+
+@router.post('/pass_reset/verify')
+async def verify_reset_code(response:Response, data: VerifyResetPass):
+    key = f'reset_code:{data.email}'
+    stored_code = await redis_client.get(key)
+    if not stored_code or stored_code!=data.code:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                            detail='Неправильный код либо закончилось время его действия')
+    await redis_client.delete(key)
+    user = await UserDAO.find_one_or_none(email=data.email)
+    access_token = create_access_token({"sub": str(user.id)})
+    response.set_cookie(key='user_access_token', value=access_token, httponly=True)
+    return {'access_token': access_token, 'refresh_token': None}
+
+@router.delete('/', summary = 'Delete a user')
+async def delete_user(user: User = Depends(get_current_user)) -> dict:
+    await UserDAO.delete(user)
+    return {'message': "Пользователь успешно удален"}

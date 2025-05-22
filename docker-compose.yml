@@ -35,6 +35,7 @@ services:
     restart: unless-stopped
     tty: true
     stdin_open: true
+
   pgadmin:
     container_name: pgadmin
     image: dpage/pgadmin4
@@ -44,6 +45,17 @@ services:
     ports:
       - "5050:80"
 
+  redis:
+    image: redis:latest
+    container_name: redis_for_WebDevOnPython
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+
 volumes:
   pgdata:
+    driver: local
+  redisdata:
     driver: local
