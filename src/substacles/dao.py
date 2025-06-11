@@ -18,6 +18,7 @@ class SubtitDAO(BaseDAO):
     async def add(cls, author_id: int, task_id: int, **values):
         async with async_session_maker() as session:
             performer_email = values.pop('performer_email')
+            user = await session.get(User, author_id)
             if performer_email is None:
                 performer_id = author_id
             else:

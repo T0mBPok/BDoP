@@ -37,3 +37,5 @@ async def send_userinfo_email(email: str, password: str):
         password=settings.SMTP_PASSWORD,
         use_tls = True
     )
+    
+#fdgddffdf@yandex.ru

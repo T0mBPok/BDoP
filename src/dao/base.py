@@ -81,7 +81,7 @@ class BaseDAO:
                 performer_exists = await session.scalar(stmt)
                 if not performer_exists:
                     raise HTTPException(status_code=400, detail=f"User (performer) with id={performer_id} does not exist")
-            
+
             if user.is_admin:
                 query = (sqlalchemy_update(cls.model)
                         .where(*[getattr(cls.model, key) == value for key, value in filter_by.items()])

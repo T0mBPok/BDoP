@@ -6,11 +6,13 @@ from src.users.models import User
 from src.categories.rb import RBCategory
 
 router = APIRouter(prefix='/categories', tags=["РаБота с категориями"])
+
+
 @router.post('/', summary="Add a category")
 async def add_category(category: CategoryAdd, user: str = Depends(get_current_user)):
     check = await CategoryDAO.add(author_id=user.id, **category.model_dump())
     if check:
-        return{"mesage": "Категория успешно добавлена"}
+        return{"message": "Категория успешно добавлена"}
     else:
         raise HTTPException(
             status_code=400, 

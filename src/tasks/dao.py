@@ -17,6 +17,7 @@ class TaskDAO(BaseDAO):
     async def add(cls, author_id: int, project_id: int, **values):
         async with async_session_maker() as session:
             performer_email = values.pop('performer_email')
+            user = await session.get(User, author_id)
             if performer_email is None:
                 performer_id = author_id
             else:
@@ -44,8 +45,8 @@ class TaskDAO(BaseDAO):
                                                 .where(Project.id == project_id)
                                                 .order_by(Project.id))
                 project = result.scalars().one()
-                if user not in project.users:
-                    project.users.append(user)
+            if user not in project.users:
+                project.users.append(user)
             
             creation_date: date = date.today() 
 
